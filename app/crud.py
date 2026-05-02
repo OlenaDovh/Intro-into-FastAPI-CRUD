@@ -1,42 +1,91 @@
-from sqlmodel import Session, select
-from typing import List, Optional
+from typing import Optional
+from sqlalchemy import asc, desc
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 from app.models import Item, ItemCreate, ItemUpdate
 
-
-def create_item(session: Session, item_data: ItemCreate) -> Item:
-    item = Item.from_orm(item_data)
+async def create_item(session: AsyncSession, item_data: ItemCreate) -> Item:
+    item = Item.model_validate(item_data)
     session.add(item)
-    session.commit()
-    session.refresh(item)
+    await session.commit()
+    await session.refresh(item)
     return item
 
+async def get_item(session: AsyncSession, item_id: int) -> Optional[Item]:
+    return await session.get(Item, item_id)
 
-def get_item(session: Session, item_id: int) -> Optional[Item]:
-    return session.get(Item, item_id)
+async def get_items(
+    session: AsyncSession,
+    skip: int = 0,
+    limit: int = 10,
+    owner_id: Optional[int] = None,
+    search: Optional[str] = None,
+    sort_by: str = "id",
+    sort_order: str = "asc"
+) -> list[Item]:
+    statement = select(Item)
 
+    if owner_id is not None:
+        statement = statement.where(Item.owner_id == owner_id)
 
-def get_items(session: Session, skip: int = 0, limit: int = 100) -> List[Item]:
-    statement = select(Item).offset(skip).limit(limit)
-    return session.exec(statement).all()
+    if search:
+        statement = statement.where(Item.title.contains(search))
 
+    sort_columns = {
+        "id": Item.id,
+        "title": Item.title,
+        "price": Item.price,
+        "owner_id": Item.owner_id,
+        "is_active": Item.is_active
+    }
 
-def update_item(session: Session, item_id: int, item_data: ItemUpdate) -> Optional[Item]:
-    item = session.get(Item, item_id)
+    sort_column = sort_columns.get(sort_by, Item.id)
+
+    if sort_order == "desc":
+        statement = statement.order_by(desc(sort_column))
+    else:
+        statement = statement.order_by(asc(sort_column))
+
+    statement = statement.offset(skip).limit(limit)
+
+    result = await session.execute(statement)
+    return list(result.scalars().all())
+
+async def update_item(
+    session: AsyncSession,
+    item_id: int,
+    item_data: ItemUpdate,
+    owner_id: int
+) -> Optional[Item]:
+    item = await session.get(Item, item_id)
+
     if not item:
         return None
-    item_data_dict = item_data.dict(exclude_unset=True)
+
+    if item.owner_id != owner_id:
+        return False
+
+    item_data_dict = item_data.model_dump(exclude_unset=True)
+
     for key, value in item_data_dict.items():
         setattr(item, key, value)
+
     session.add(item)
-    session.commit()
-    session.refresh(item)
+    await session.commit()
+    await session.refresh(item)
+
     return item
 
+async def delete_item(session: AsyncSession, item_id: int, owner_id: int) -> Optional[bool]:
+    item = await session.get(Item, item_id)
 
-def delete_item(session: Session, item_id: int) -> bool:
-    item = session.get(Item, item_id)
     if not item:
+        return None
+
+    if item.owner_id != owner_id:
         return False
-    session.delete(item)
-    session.commit()
+
+    await session.delete(item)
+    await session.commit()
+
     return True
