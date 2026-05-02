@@ -5,6 +5,13 @@ app = FastAPI(title="FastAPI CRUD Demo")
 
 app.include_router(items.router, prefix="/items", tags=["items"])
 
+
 @app.get("/")
-async def root():
+async def root() -> dict:
+    """Кореневий endpoint для перевірки роботи API.
+
+    Returns:
+        Словник із вітальним повідомленням.
+    """
+
     return {"message": "Hello, FastAPI CRUD"}

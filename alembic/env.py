@@ -14,7 +14,14 @@ if config.config_file_name is not None:
 
 target_metadata = SQLModel.metadata
 
+
 def run_migrations_offline() -> None:
+    """Запускає міграції в офлайн-режимі.
+
+    Returns:
+        None.
+    """
+
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -26,13 +33,30 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+
 def do_run_migrations(connection: Connection) -> None:
+    """Виконує міграції з використанням переданого підключення.
+
+    Args:
+        connection: Активне підключення до бази даних.
+
+    Returns:
+        None.
+    """
+
     context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():
         context.run_migrations()
 
+
 async def run_async_migrations() -> None:
+    """Запускає міграції в асинхронному онлайн-режимі.
+
+    Returns:
+        None.
+    """
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
@@ -44,8 +68,16 @@ async def run_async_migrations() -> None:
 
     await connectable.dispose()
 
+
 def run_migrations_online() -> None:
+    """Запускає міграції в онлайн-режимі.
+
+    Returns:
+        None.
+    """
+
     asyncio.run(run_async_migrations())
+
 
 if context.is_offline_mode():
     run_migrations_offline()

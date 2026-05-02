@@ -4,7 +4,13 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_create_and_read():
+def test_create_and_read() -> None:
+    """Перевіряє створення елемента та його отримання за ідентифікатором.
+
+    Returns:
+        None.
+    """
+
     data = {"title": "Test", "price": 1.23, "owner_id": 1}
     resp = client.post("/items/", json=data)
 
@@ -22,7 +28,13 @@ def test_create_and_read():
     assert get_resp.json()["id"] == item["id"]
 
 
-def test_filter_by_owner_id():
+def test_filter_by_owner_id() -> None:
+    """Перевіряє фільтрацію елементів за ідентифікатором власника.
+
+    Returns:
+        None.
+    """
+
     client.post("/items/", json={"title": "Owner 1 Item", "price": 10, "owner_id": 1})
     client.post("/items/", json={"title": "Owner 2 Item", "price": 20, "owner_id": 2})
 
@@ -36,7 +48,13 @@ def test_filter_by_owner_id():
     assert all(item["owner_id"] == 1 for item in items)
 
 
-def test_owner_can_update_item():
+def test_owner_can_update_item() -> None:
+    """Перевіряє, що власник може оновити свій елемент.
+
+    Returns:
+        None.
+    """
+
     create_resp = client.post("/items/", json={"title": "Old title", "price": 10, "owner_id": 1})
     item = create_resp.json()
 
@@ -49,7 +67,13 @@ def test_owner_can_update_item():
     assert update_resp.json()["title"] == "New title"
 
 
-def test_not_owner_cannot_update_item():
+def test_not_owner_cannot_update_item() -> None:
+    """Перевіряє, що не власник не може оновити чужий елемент.
+
+    Returns:
+        None.
+    """
+
     create_resp = client.post("/items/", json={"title": "Private item", "price": 10, "owner_id": 1})
     item = create_resp.json()
 
@@ -62,7 +86,13 @@ def test_not_owner_cannot_update_item():
     assert update_resp.json()["detail"] == "Only owner can update this item"
 
 
-def test_owner_can_delete_item():
+def test_owner_can_delete_item() -> None:
+    """Перевіряє, що власник може видалити свій елемент.
+
+    Returns:
+        None.
+    """
+
     create_resp = client.post("/items/", json={"title": "Delete me", "price": 10, "owner_id": 1})
     item = create_resp.json()
 
@@ -75,7 +105,13 @@ def test_owner_can_delete_item():
     assert get_resp.status_code == 404
 
 
-def test_not_owner_cannot_delete_item():
+def test_not_owner_cannot_delete_item() -> None:
+    """Перевіряє, що не власник не може видалити чужий елемент.
+
+    Returns:
+        None.
+    """
+
     create_resp = client.post("/items/", json={"title": "Do not delete", "price": 10, "owner_id": 1})
     item = create_resp.json()
 
@@ -85,7 +121,13 @@ def test_not_owner_cannot_delete_item():
     assert delete_resp.json()["detail"] == "Only owner can delete this item"
 
 
-def test_pagination():
+def test_pagination() -> None:
+    """Перевіряє обмеження кількості елементів у відповіді.
+
+    Returns:
+        None.
+    """
+
     for index in range(5):
         client.post(
             "/items/",
@@ -98,7 +140,13 @@ def test_pagination():
     assert len(resp.json()) <= 2
 
 
-def test_search_by_title():
+def test_search_by_title() -> None:
+    """Перевіряє пошук елементів за назвою.
+
+    Returns:
+        None.
+    """
+
     client.post("/items/", json={"title": "Unique Phone", "price": 500, "owner_id": 1})
     client.post("/items/", json={"title": "Laptop", "price": 1000, "owner_id": 1})
 
@@ -112,7 +160,13 @@ def test_search_by_title():
     assert all("Phone" in item["title"] for item in items)
 
 
-def test_sort_by_price_desc():
+def test_sort_by_price_desc() -> None:
+    """Перевіряє сортування елементів за ціною у спадному порядку.
+
+    Returns:
+        None.
+    """
+
     client.post("/items/", json={"title": "Cheap item", "price": 10, "owner_id": 1})
     client.post("/items/", json={"title": "Expensive item", "price": 100, "owner_id": 1})
 

@@ -4,25 +4,63 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from app.models import Item, ItemCreate, ItemUpdate
 
+
 async def create_item(session: AsyncSession, item_data: ItemCreate) -> Item:
+    """Створює новий елемент у базі даних.
+
+    Args:
+        session: Асинхронна сесія бази даних.
+        item_data: Дані для створення елемента.
+
+    Returns:
+        Створений елемент.
+    """
+
     item = Item.model_validate(item_data)
     session.add(item)
     await session.commit()
     await session.refresh(item)
     return item
 
+
 async def get_item(session: AsyncSession, item_id: int) -> Optional[Item]:
+    """Повертає елемент за його ідентифікатором.
+
+    Args:
+        session: Асинхронна сесія бази даних.
+        item_id: Ідентифікатор елемента.
+
+    Returns:
+        Знайдений елемент або None.
+    """
+
     return await session.get(Item, item_id)
 
+
 async def get_items(
-    session: AsyncSession,
-    skip: int = 0,
-    limit: int = 10,
-    owner_id: Optional[int] = None,
-    search: Optional[str] = None,
-    sort_by: str = "id",
-    sort_order: str = "asc"
+        session: AsyncSession,
+        skip: int = 0,
+        limit: int = 10,
+        owner_id: Optional[int] = None,
+        search: Optional[str] = None,
+        sort_by: str = "id",
+        sort_order: str = "asc"
 ) -> list[Item]:
+    """Повертає список елементів із фільтрацією, пошуком і сортуванням.
+
+    Args:
+        session: Асинхронна сесія бази даних.
+        skip: Кількість елементів, які потрібно пропустити.
+        limit: Максимальна кількість елементів у відповіді.
+        owner_id: Ідентифікатор власника для фільтрації.
+        search: Текст для пошуку за назвою.
+        sort_by: Поле для сортування.
+        sort_order: Напрям сортування.
+
+    Returns:
+        Список елементів.
+    """
+
     statement = select(Item)
 
     if owner_id is not None:
@@ -51,12 +89,25 @@ async def get_items(
     result = await session.execute(statement)
     return list(result.scalars().all())
 
+
 async def update_item(
-    session: AsyncSession,
-    item_id: int,
-    item_data: ItemUpdate,
-    owner_id: int
+        session: AsyncSession,
+        item_id: int,
+        item_data: ItemUpdate,
+        owner_id: int
 ) -> Optional[Item]:
+    """Оновлює елемент, якщо власник має доступ.
+
+    Args:
+        session: Асинхронна сесія бази даних.
+        item_id: Ідентифікатор елемента.
+        item_data: Дані для оновлення елемента.
+        owner_id: Ідентифікатор власника елемента.
+
+    Returns:
+        Оновлений елемент або None, якщо елемент не знайдено.
+    """
+
     item = await session.get(Item, item_id)
 
     if not item:
@@ -76,7 +127,19 @@ async def update_item(
 
     return item
 
+
 async def delete_item(session: AsyncSession, item_id: int, owner_id: int) -> Optional[bool]:
+    """Видаляє елемент, якщо власник має доступ.
+
+    Args:
+        session: Асинхронна сесія бази даних.
+        item_id: Ідентифікатор елемента.
+        owner_id: Ідентифікатор власника елемента.
+
+    Returns:
+        True, якщо елемент видалено, False, якщо власник не має доступу, або None, якщо елемент не знайдено.
+    """
+
     item = await session.get(Item, item_id)
 
     if not item:
